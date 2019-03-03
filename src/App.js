@@ -1,24 +1,45 @@
 import React, { Component } from 'react';
-import logo from './logo.svg';
 import './App.css';
+import getAddress from './getAddress';
+import getMonthlyNeed from './getMonthlyNeed';
+
+const FUND_ADDRESS = "FKZB5JeUKVCJYY6svRD1WGpJkxnu6KfSti";
+const FUND_ADDR_URL = `http://explore.placeh.io:8080/address/${FUND_ADDRESS}`;
 
 class App extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      goal: null,
+      balance: null
+    };
+  }
+  componentWillMount() {
+    getMonthlyNeed().then((need)=>{
+      this.setState({
+        goal: need
+      });
+    });
+    getAddress(FUND_ADDRESS).then((addr)=>{
+      this.setState({
+        balance: Math.round(addr.balance) || 0
+      });
+    });
+  }
   render() {
+    const {goal, balance} = this.state;
+    const progress = Math.floor(( balance / goal ) * 100);
+    const runway = Math.floor(balance / goal);
     return (
       <div className="App">
         <header className="App-header">
-          <img src={logo} className="App-logo" alt="logo" />
-          <p>
-            Edit <code>src/App.js</code> and save to reload.
-          </p>
-          <a
-            className="App-link"
-            href="https://reactjs.org"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Learn React
-          </a>
+          { balance > goal ? <p>
+            We have enough to survive for another {runway} months.
+          </p> : <p>We don't have enough to survive this month. Please donate!</p> }
+          <p>Progress: {progress}%</p>
+          <p>Contribute PHL to <a href={FUND_ADDR_URL}>{FUND_ADDRESS}</a></p>
+          <p>Balance: {balance} PHL</p>
+          <p>Goal: {goal} PHL</p>
         </header>
       </div>
     );
