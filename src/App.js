@@ -1,6 +1,5 @@
 import React, { Component } from 'react';
 import './App.css';
-import getAddress from './getAddress';
 import getMonthlyNeed from './getMonthlyNeed';
 
 const FUND_ADDRESS = "FKZB5JeUKVCJYY6svRD1WGpJkxnu6KfSti";
@@ -10,6 +9,7 @@ class App extends Component {
   constructor(props) {
     super(props);
     this.state = {
+      loading: true,
       goal: null,
       balance: null
     };
@@ -20,29 +20,37 @@ class App extends Component {
         goal: need
       });
     });
-    getAddress(FUND_ADDRESS).then((addr)=>{
-      this.setState({
-        balance: Math.round(addr.balance) || 0
-      });
-    });
+    fetch('/.netlify/functions/getAddress')
+      .then(response => response.json())
+      .then(json => this.setState({ loading: false, balance: Math.round(json.balance) || 0 }));
   }
   render() {
-    const {goal, balance} = this.state;
+    const {loading, goal, balance} = this.state;
     const progress = Math.floor(( balance / goal ) * 100);
     const runway = Math.floor(balance / goal);
-    return (
-      <div className="App">
-        <header className="App-header">
-          { balance > goal ? <p>
-            We have enough to survive for another {runway} months.
-          </p> : <p>We don't have enough to survive this month. Please donate!</p> }
-          <p>Progress: {progress}%</p>
-          <p>Contribute PHL to <a href={FUND_ADDR_URL}>{FUND_ADDRESS}</a></p>
-          <p>Balance: {balance} PHL</p>
-          <p>Goal: {goal} PHL</p>
-        </header>
-      </div>
-    );
+    if (loading) {
+      return (
+        <div className="App">
+          <header className="App-header">
+            Loading
+          </header>
+        </div>
+      )
+    } else {
+      return (
+        <div className="App">
+          <header className="App-header">
+            { balance > goal ? <p>
+              We can operate the servers for another {runway} month(s). Thank you!
+            </p> : <p>We are still short {goal - balance} PHL for the month. Please donate!</p> }
+            <p>Contribute <a href="https://placeh.io">PHL</a> to <a href={FUND_ADDR_URL}>{FUND_ADDRESS}</a></p>
+            <p>Balance: {balance} PHL</p>
+            <p>Goal: {goal} PHL</p>
+            <p>Progress: {progress}%</p>
+          </header>
+        </div>
+      );
+    }
   }
 }
 
